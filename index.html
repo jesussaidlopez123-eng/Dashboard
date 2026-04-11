@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <title>Dashboard Ejecutivo - Credicel</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -68,8 +69,8 @@
         </div>
         <div class="card-dash p-5 relative overflow-hidden">
             <div class="absolute top-0 right-0 p-3 opacity-10 text-5xl">📱</div>
-            <h3 class="text-slate-400 font-black text-[9px] uppercase tracking-widest mb-1">Equipos Hoy</h3>
-            <div class="text-3xl font-black text-teal-400"><span id="kpi-equipos">0</span></div>
+            <h3 class="text-slate-400 font-black text-[9px] uppercase tracking-widest mb-1">Equipos Semanal <span class="label-semana-dynamic bg-teal-900/30 text-teal-400 px-1 py-0.5 rounded text-[8px]">S--</span></h3>
+            <div class="text-3xl font-black text-teal-400"><span id="kpi-equipos-sem">0</span></div>
         </div>
         <div class="card-dash p-5 relative overflow-hidden">
             <div class="absolute top-0 right-0 p-3 opacity-10 text-5xl">📈</div>
@@ -199,7 +200,7 @@
 
     <script>
         // --- 1. LLAVE DE CONEXIÓN A GOOGLE APPS SCRIPT ---
-        const URL_API_APPS_SCRIPT = "https://script.google.com/macros/s/AKfycbyvA-_qobbI6rDWYhXyZkEAmudVSGfaES9RD2G3s1g3rZMyYWmQrq47f9iyZDLkJffp/exec";
+        const URL_API_APPS_SCRIPT = "https://script.google.com/macros/s/AKfycbzHa9dmJyHX4MH_MSY2uXDepST9wA6WP7IZZbb_daG7gmJPCMjVubk-YmlW7QLO5I0x/exec";
 
         // --- 2. GESTIÓN DE METAS ---
         let metaSemanal = localStorage.getItem('metaSemanal') || 30000;
@@ -248,29 +249,34 @@
             }
         }
 
-        // --- 3. CÁLCULOS DE TIEMPO ---
-        function getNumeroSemana(d) {
-            d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
-            d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay()||7));
-            var yearStart = new Date(Date.UTC(d.getUTCFullYear(),0,1));
-            return Math.ceil((((d - yearStart)/86400000)+1)/7);
+        // --- CÁLCULOS DE TIEMPO BLINDADOS CONTRA CACHÉ ---
+        function inicializarFechas() {
+            function getNumeroSemana(d) {
+                d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+                d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay()||7));
+                var yearStart = new Date(Date.UTC(d.getUTCFullYear(),0,1));
+                return Math.ceil((((d - yearStart)/86400000)+1)/7);
+            }
+
+            const hoy = new Date();
+            const numSemana = getNumeroSemana(hoy);
+            
+            // Calculamos ayer dinámicamente en este instante
+            const ayer = new Date(hoy); 
+            ayer.setDate(ayer.getDate() - 1);
+            
+            document.getElementById('fecha-actual').innerText = hoy.toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' }).toUpperCase();
+            document.getElementById('label-semana-header').innerText = `SEM ${numSemana}`;
+            document.getElementById('label-ayer').innerText = ayer.toLocaleDateString('es-MX', { weekday: 'short', day: 'numeric' }).toUpperCase();
+            
+            document.querySelectorAll('.label-semana-dynamic').forEach(el => { el.innerText = `S-${numSemana}`; });
+            document.querySelectorAll('.label-mes-dynamic').forEach(el => { el.innerText = hoy.toLocaleDateString('es-MX', { month: 'long' }).substring(0,3).toUpperCase(); });
         }
-
-        const hoy = new Date();
-        const numSemana = getNumeroSemana(hoy);
-        const ayer = new Date(hoy); ayer.setDate(ayer.getDate() - 1);
-        
-        document.getElementById('fecha-actual').innerText = hoy.toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' }).toUpperCase();
-        document.getElementById('label-semana-header').innerText = `SEM ${numSemana}`;
-        document.getElementById('label-ayer').innerText = ayer.toLocaleDateString('es-MX', { weekday: 'short', day: 'numeric' }).toUpperCase();
-        document.querySelectorAll('.label-semana-dynamic').forEach(el => { el.innerText = `S-${numSemana}`; });
-        document.querySelectorAll('.label-mes-dynamic').forEach(el => { el.innerText = hoy.toLocaleDateString('es-MX', { month: 'long' }).substring(0,3).toUpperCase(); });
-
-        let chartSemanal = null;
-        let chartMensual = null;
 
         // --- 4. MOTOR DE CONEXIÓN A LA NUBE (FETCH) ---
         async function cargarDatos() {
+            inicializarFechas(); // Forzamos a recalcular las fechas cada vez que se actualiza
+            
             const loader = document.getElementById('loading-dash');
             const loaderText = document.getElementById('loading-text');
             
@@ -282,8 +288,9 @@
             renderizarMetas();
 
             try {
-                // 2. Ir a buscar los datos a Google Apps Script
-                const respuesta = await fetch(URL_API_APPS_SCRIPT);
+                // Truco de ?t= para engañar al caché del navegador y forzar descarga fresca
+                const urlSinCache = URL_API_APPS_SCRIPT + "?t=" + new Date().getTime();
+                const respuesta = await fetch(urlSinCache);
                 const datosReales = await respuesta.json();
 
                 if(datosReales.error) throw new Error(datosReales.error);
@@ -292,7 +299,10 @@
                 document.getElementById('kpi-ingresos-ayer').innerText = datosReales.kpis_principales.ingresosAyer || 0;
                 document.getElementById('kpi-gasto-hoy').innerText = datosReales.kpis_principales.gastosAlDia || 0; 
                 document.getElementById('kpi-accesorios').innerText = datosReales.kpis_principales.accesoriosHoy || 0;
-                document.getElementById('kpi-equipos').innerText = datosReales.kpis_principales.equiposHoy || 0;
+                
+                // AQUÍ LEEMOS EL NUEVO DATO DE EQUIPOS SEMANAL
+                document.getElementById('kpi-equipos-sem').innerText = datosReales.kpis_principales.equiposSemanal || 0;
+                
                 document.getElementById('kpi-utilidad-mes').innerText = datosReales.kpis_principales.utilidadMes || 0;
 
                 // Extraer utilidad real para que la barra de meta se mueva solita
@@ -309,9 +319,6 @@
                 document.getElementById('m-gasto-dia').innerText = datosReales.control_financiero.gastoHoy || 0;
                 document.getElementById('m-gasto-sem').innerText = datosReales.control_financiero.gastoSemanal || 0;
                 document.getElementById('m-gasto-mes').innerText = datosReales.control_financiero.gastoMensual || 0;
-
-                // NOTA: Live feed, stock crítico y top 10 necesitarían que el Apps Script devuelva esos datos en el JSON. 
-                // Si el script actual solo devuelve KPIs, esas secciones quedarán como estaban o vacías si no hay datos de prueba.
 
                 // 9. Ocultar loader de forma elegante
                 loader.style.opacity = '0';
@@ -331,7 +338,7 @@
             document.getElementById('kpi-ingresos-ayer').innerText = "0.00";
             document.getElementById('kpi-gasto-hoy').innerText = "0.00"; 
             document.getElementById('kpi-accesorios').innerText = "0.00";
-            document.getElementById('kpi-equipos').innerText = "0";
+            document.getElementById('kpi-equipos-sem').innerText = "0";
             document.getElementById('kpi-utilidad-mes').innerText = "0.00";
             
             document.getElementById('loading-dash').style.opacity = '0';

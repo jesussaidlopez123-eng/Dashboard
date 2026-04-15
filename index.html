@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -149,7 +148,7 @@
 
     <script>
         const URL_API_APPS_SCRIPT = "https://script.google.com/macros/s/AKfycbxWkTy2x6yRWUAV1B2jN1I6HsR5-5TkgtL__p7PZtVwqSKlyxYnzYQEC6ygqW9nZHRR/exec";
-
+        
         let metaSemanal = localStorage.getItem('metaSemanal') || 30000;
         let metaMensual = localStorage.getItem('metaMensual') || 200000;
         let utilidadSemanaActual = 0;
@@ -176,23 +175,40 @@
             let nS = prompt("Meta SEMANAL:", metaSemanal);
             let nM = prompt("Meta MENSUAL:", metaMensual);
             if(nS && nM) {
-                metaSemanal = nS; metaMensual = nM;
-                localStorage.setItem('metaSemanal', nS); localStorage.setItem('metaMensual', nM);
+                metaSemanal = nS;
+                metaMensual = nM;
+                localStorage.setItem('metaSemanal', nS); 
+                localStorage.setItem('metaMensual', nM);
                 renderizarMetas();
             }
         }
 
         function inicializarFechas() {
+            function getNumeroSemana(d) {
+                d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+                d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay()||7));
+                var yearStart = new Date(Date.UTC(d.getUTCFullYear(),0,1));
+                return Math.ceil((((d - yearStart)/86400000)+1)/7);
+            }
+
             const hoy = new Date();
+            const numSemana = getNumeroSemana(hoy);
+            const ayer = new Date(hoy); 
+            ayer.setDate(ayer.getDate() - 1);
+            
             document.getElementById('fecha-actual').innerText = hoy.toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' }).toUpperCase();
+            document.getElementById('label-semana-header').innerText = `SEM ${numSemana}`;
+            document.getElementById('label-ayer').innerText = ayer.toLocaleDateString('es-MX', { weekday: 'short', day: 'numeric' }).toUpperCase();
+            
+            document.querySelectorAll('.label-semana-dynamic').forEach(el => { el.innerText = `S-${numSemana}`; });
             document.querySelectorAll('.label-mes-dynamic').forEach(el => { el.innerText = hoy.toLocaleDateString('es-MX', { month: 'long' }).substring(0,3).toUpperCase(); });
         }
 
         async function cargarDatos() {
-            inicializarFechas(); 
+            inicializarFechas();
             const loader = document.getElementById('loading-dash');
             loader.style.display = 'flex'; loader.style.opacity = '1';
-
+            
             try {
                 const res = await fetch(URL_API_APPS_SCRIPT + "?t=" + new Date().getTime());
                 const datos = await res.json();
@@ -215,20 +231,20 @@
                 document.getElementById('m-gasto-sem').innerText = datos.control_financiero.gastoSemanal || 0;
                 document.getElementById('m-gasto-mes').innerText = datos.control_financiero.gastoMensual || 0;
 
-                // --- ¡NUEVA GRÁFICA DE BARRAS SEMANAL! ---
+                // --- GRÁFICA DE BARRAS SEMANAL ---
                 if(datos.grafica_semanal) {
                     if(chartSemanal) chartSemanal.destroy();
                     const ctx = document.getElementById('graficaSemanal').getContext('2d');
                     chartSemanal = new Chart(ctx, {
-                        type: 'bar', // ¡AQUÍ SE CAMBIÓ A BARRAS!
+                        type: 'bar',
                         data: {
                             labels: datos.grafica_semanal.etiquetas,
                             datasets: [{
                                 label: 'Utilidad Diaria',
                                 data: datos.grafica_semanal.valores,
-                                backgroundColor: '#10b981', // Verde esmeralda sólido
-                                hoverBackgroundColor: '#059669', // Verde oscuro al hacer hover
-                                borderRadius: 6, // Bordes redondeados elegantes
+                                backgroundColor: '#10b981',
+                                hoverBackgroundColor: '#059669',
+                                borderRadius: 6,
                                 borderSkipped: false
                             }]
                         },

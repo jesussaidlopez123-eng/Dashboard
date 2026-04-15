@@ -115,7 +115,7 @@
                     <div class="relative h-48 w-full"><canvas id="graficaSemanal"></canvas></div>
                 </div>
                 <div class="card-dash p-6">
-                    <h2 class="text-sm font-black uppercase text-blue-400 mb-4 tracking-widest">Utilidad Anual</h2>
+                    <h2 class="text-sm font-black uppercase text-blue-400 mb-4 tracking-widest">Utilidad Anual (Por Mes)</h2>
                     <div class="relative h-48 w-full"><canvas id="graficaMensual"></canvas></div>
                 </div>
             </div>
@@ -147,13 +147,15 @@
     </div>
 
     <script>
-        const URL_API_APPS_SCRIPT = "https://script.google.com/macros/s/AKfycbxWkTy2x6yRWUAV1B2jN1I6HsR5-5TkgtL__p7PZtVwqSKlyxYnzYQEC6ygqW9nZHRR/exec";
+        // ¡NUEVA URL DE CONEXIÓN ACTUALIZADA!
+        const URL_API_APPS_SCRIPT = "https://script.google.com/macros/s/AKfycby1uSltE794KdJ0lkO5AX0rtNgyV9wn2naGwsISfwWaEb7vB6DCxDqWscit2McPUNR2/exec";
         
         let metaSemanal = localStorage.getItem('metaSemanal') || 30000;
         let metaMensual = localStorage.getItem('metaMensual') || 200000;
         let utilidadSemanaActual = 0;
         let utilidadMesActual = 0;
         let chartSemanal = null;
+        let chartMensual = null; // <-- Variable para la gráfica mensual recuperada
 
         function renderizarMetas() {
             document.getElementById('meta-sem-valor').innerText = Number(metaSemanal).toLocaleString();
@@ -231,7 +233,7 @@
                 document.getElementById('m-gasto-sem').innerText = datos.control_financiero.gastoSemanal || 0;
                 document.getElementById('m-gasto-mes').innerText = datos.control_financiero.gastoMensual || 0;
 
-                // --- GRÁFICA DE BARRAS SEMANAL ---
+                // --- 1. GRÁFICA DE BARRAS SEMANAL ---
                 if(datos.grafica_semanal) {
                     if(chartSemanal) chartSemanal.destroy();
                     const ctx = document.getElementById('graficaSemanal').getContext('2d');
@@ -254,6 +256,39 @@
                             scales: {
                                 x: { grid: { display: false }, ticks: { color: '#94a3b8', font: {size: 10} } },
                                 y: { grid: { color: '#1e293b' }, ticks: { color: '#94a3b8', font: {size: 10} }, beginAtZero: true }
+                            }
+                        }
+                    });
+                }
+
+                // --- 2. GRÁFICA LINEAL ANUAL/MENSUAL (RESTAURADA) ---
+                if(datos.grafica_mensual) {
+                    if(chartMensual) chartMensual.destroy();
+                    const ctxMes = document.getElementById('graficaMensual').getContext('2d');
+                    chartMensual = new Chart(ctxMes, {
+                        type: 'line',
+                        data: {
+                            labels: datos.grafica_mensual.etiquetas,
+                            datasets: [{
+                                label: 'Utilidad por Mes',
+                                data: datos.grafica_mensual.valores,
+                                borderColor: '#3b82f6', 
+                                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                                borderWidth: 3,
+                                pointBackgroundColor: '#0f172a',
+                                pointBorderColor: '#3b82f6',
+                                pointBorderWidth: 2,
+                                pointRadius: 4,
+                                tension: 0.4, 
+                                fill: true
+                            }]
+                        },
+                        options: {
+                            responsive: true, maintainAspectRatio: false,
+                            plugins: { legend: { display: false } },
+                            scales: {
+                                x: { grid: { color: '#334155', drawBorder: false }, ticks: { color: '#94a3b8', font: {size: 10} } },
+                                y: { grid: { color: '#1e293b', drawBorder: false }, ticks: { color: '#94a3b8', font: {size: 10} }, beginAtZero: true }
                             }
                         }
                     });

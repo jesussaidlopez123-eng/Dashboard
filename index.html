@@ -17,6 +17,9 @@
         @keyframes pulse-live { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(1.2); } 100% { opacity: 1; transform: scale(1); } }
         .dot-live { height: 8px; width: 8px; background-color: #10b981; border-radius: 50%; display: inline-block; animation: pulse-live 1.5s infinite ease-in-out; }
 
+        @keyframes slideIn { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
+        .slide-in { animation: slideIn 0.4s ease-out forwards; }
+
         .progress-bar-bg { background: #0f172a; border-radius: 999px; height: 12px; border: 1px solid #334155; position: relative; overflow: hidden; }
         .progress-bar-fill-sem { background: linear-gradient(90deg, #10b981, #059669); height: 100%; border-radius: 999px; transition: width 1.5s ease-in-out; box-shadow: 0 0 15px rgba(16, 185, 129, 0.5); }
         .progress-bar-fill-mes { background: linear-gradient(90deg, #3b82f6, #6366f1); height: 100%; border-radius: 999px; transition: width 1.5s ease-in-out; box-shadow: 0 0 15px rgba(59, 130, 246, 0.5); }
@@ -132,7 +135,8 @@
         <div class="flex flex-col gap-5 h-full">
             <div class="card-dash p-6 h-[280px] flex flex-col">
                 <h2 class="text-xs font-black uppercase text-white flex items-center gap-2 mb-3"><span class="dot-live"></span> Live Feed</h2>
-                <div id="lista-live" class="overflow-y-hidden space-y-2"></div>
+                <div id="lista-live" class="overflow-y-auto space-y-2 pr-1 h-full">
+                    </div>
             </div>
             <div class="card-dash p-6 h-[250px] flex flex-col">
                 <h2 class="text-xs font-black uppercase text-red-400 mb-3 tracking-widest">🚨 Stock Crítico</h2>
@@ -147,15 +151,15 @@
     </div>
 
     <script>
-        // ¡NUEVA URL DE CONEXIÓN ACTUALIZADA!
-        const URL_API_APPS_SCRIPT = "https://script.google.com/macros/s/AKfycby1uSltE794KdJ0lkO5AX0rtNgyV9wn2naGwsISfwWaEb7vB6DCxDqWscit2McPUNR2/exec";
+        // ¡URL ACTUALIZADA CON ÉXITO!
+        const URL_API_APPS_SCRIPT = "https://script.google.com/macros/s/AKfycby93oUObNgSCM8Hf4mkNpfTNmug0SueK2V-JWawq0IBfkalUBYrwuYASXIld3tv7gE/exec";
         
         let metaSemanal = localStorage.getItem('metaSemanal') || 30000;
         let metaMensual = localStorage.getItem('metaMensual') || 200000;
         let utilidadSemanaActual = 0;
         let utilidadMesActual = 0;
         let chartSemanal = null;
-        let chartMensual = null; // <-- Variable para la gráfica mensual recuperada
+        let chartMensual = null;
 
         function renderizarMetas() {
             document.getElementById('meta-sem-valor').innerText = Number(metaSemanal).toLocaleString();
@@ -233,7 +237,7 @@
                 document.getElementById('m-gasto-sem').innerText = datos.control_financiero.gastoSemanal || 0;
                 document.getElementById('m-gasto-mes').innerText = datos.control_financiero.gastoMensual || 0;
 
-                // --- 1. GRÁFICA DE BARRAS SEMANAL ---
+                // Gráfica Semanal
                 if(datos.grafica_semanal) {
                     if(chartSemanal) chartSemanal.destroy();
                     const ctx = document.getElementById('graficaSemanal').getContext('2d');
@@ -244,24 +248,15 @@
                             datasets: [{
                                 label: 'Utilidad Diaria',
                                 data: datos.grafica_semanal.valores,
-                                backgroundColor: '#10b981',
-                                hoverBackgroundColor: '#059669',
-                                borderRadius: 6,
-                                borderSkipped: false
+                                backgroundColor: '#10b981', hoverBackgroundColor: '#059669',
+                                borderRadius: 6, borderSkipped: false
                             }]
                         },
-                        options: {
-                            responsive: true, maintainAspectRatio: false,
-                            plugins: { legend: { display: false } },
-                            scales: {
-                                x: { grid: { display: false }, ticks: { color: '#94a3b8', font: {size: 10} } },
-                                y: { grid: { color: '#1e293b' }, ticks: { color: '#94a3b8', font: {size: 10} }, beginAtZero: true }
-                            }
-                        }
+                        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, ticks: { color: '#94a3b8', font: {size: 10} } }, y: { grid: { color: '#1e293b' }, ticks: { color: '#94a3b8', font: {size: 10} }, beginAtZero: true } } }
                     });
                 }
 
-                // --- 2. GRÁFICA LINEAL ANUAL/MENSUAL (RESTAURADA) ---
+                // Gráfica Mensual
                 if(datos.grafica_mensual) {
                     if(chartMensual) chartMensual.destroy();
                     const ctxMes = document.getElementById('graficaMensual').getContext('2d');
@@ -272,26 +267,39 @@
                             datasets: [{
                                 label: 'Utilidad por Mes',
                                 data: datos.grafica_mensual.valores,
-                                borderColor: '#3b82f6', 
-                                backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                                borderWidth: 3,
-                                pointBackgroundColor: '#0f172a',
-                                pointBorderColor: '#3b82f6',
-                                pointBorderWidth: 2,
-                                pointRadius: 4,
-                                tension: 0.4, 
-                                fill: true
+                                borderColor: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                                borderWidth: 3, pointBackgroundColor: '#0f172a', pointBorderColor: '#3b82f6', pointBorderWidth: 2, pointRadius: 4, tension: 0.4, fill: true
                             }]
                         },
-                        options: {
-                            responsive: true, maintainAspectRatio: false,
-                            plugins: { legend: { display: false } },
-                            scales: {
-                                x: { grid: { color: '#334155', drawBorder: false }, ticks: { color: '#94a3b8', font: {size: 10} } },
-                                y: { grid: { color: '#1e293b', drawBorder: false }, ticks: { color: '#94a3b8', font: {size: 10} }, beginAtZero: true }
-                            }
+                        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { color: '#334155', drawBorder: false }, ticks: { color: '#94a3b8', font: {size: 10} } }, y: { grid: { color: '#1e293b', drawBorder: false }, ticks: { color: '#94a3b8', font: {size: 10} }, beginAtZero: true } } }
+                    });
+                }
+
+                // --- LIVE FEED IMPLEMENTADO ---
+                const contenedorLive = document.getElementById('lista-live');
+                if(datos.live_feed && datos.live_feed.length > 0) {
+                    contenedorLive.innerHTML = '';
+                    datos.live_feed.forEach((item, index) => {
+                        if(index < 6) { // Top 6 movimientos
+                            let suc = item.sucursal ? item.sucursal.toString().trim().toUpperCase() : 'MOVIMIENTO';
+                            let fechaTxt = item.fecha ? item.fecha.toString().substring(0, 16) : 'Reciente'; 
+                            let montoTxt = item.monto ? Number(item.monto).toLocaleString('es-MX') : '0';
+                            
+                            const div = document.createElement('div');
+                            div.className = "slide-in flex justify-between items-center bg-slate-800/80 p-3 rounded-lg border-l-2 border-emerald-500 shadow-sm";
+                            div.innerHTML = `
+                                <div>
+                                    <p class="text-[10px] font-black text-slate-200 uppercase tracking-wider">⚡ ${suc}</p>
+                                    <p class="text-[8px] font-bold text-slate-500 uppercase mt-0.5">${fechaTxt}</p>
+                                </div>
+                                <div class="text-sm font-black text-emerald-400">$${montoTxt}</div>
+                            `;
+                            div.style.animationDelay = `${index * 0.1}s`;
+                            contenedorLive.appendChild(div);
                         }
                     });
+                } else {
+                    contenedorLive.innerHTML = '<p class="text-[10px] text-slate-500 italic text-center mt-4">Esperando operaciones...</p>';
                 }
 
                 loader.style.opacity = '0';

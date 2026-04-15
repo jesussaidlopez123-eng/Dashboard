@@ -200,7 +200,7 @@
 
     <script>
         // --- 1. LLAVE DE CONEXIÓN A GOOGLE APPS SCRIPT (ACTUALIZADA) ---
-        const URL_API_APPS_SCRIPT = "https://script.google.com/macros/s/AKfycbzENmJhNkrbM3fkDCXKop-iiIA6gVNBtiPrbV2b15XHUhdHRU0hAS3gyZi7VvcxfVs/exec";
+        const URL_API_APPS_SCRIPT = "https://script.google.com/macros/s/AKfycbxZb6naad6VwKmiBNXBaMFzYLaeTDbHkIhlRG4osNvSQz99PvegrEAlhZgsU1rPv6a1/exec";
 
         // --- 2. GESTIÓN DE METAS ---
         let metaSemanal = localStorage.getItem('metaSemanal') || 30000;
@@ -298,13 +298,19 @@
                 document.getElementById('kpi-accesorios').innerText = datosReales.kpis_principales.accesoriosHoy || 0;
                 document.getElementById('kpi-equipos-sem').innerText = datosReales.kpis_principales.equiposSemanal || 0;
                 
-                // NUEVO: KPI Utilidad Semanal (Reemplaza a Utilidad Mes)
+                // KPI Utilidad Semanal
                 document.getElementById('kpi-utilidad-sem').innerText = datosReales.kpis_principales.utilidadSemanal || 0;
 
                 // Actualizar la barra de progreso usando la Utilidad Semanal extraída del Excel
                 if(datosReales.kpis_principales.utilidadSemanal) {
                     utilidadSemanaActual = parseFloat(datosReales.kpis_principales.utilidadSemanal.toString().replace(/,/g, ''));
                 }
+
+                // NUEVO: Actualizar la Utilidad Mensual para la barra de progreso
+                if(datosReales.kpis_principales.utilidadMensual) {
+                    utilidadMesActual = parseFloat(datosReales.kpis_principales.utilidadMensual.toString().replace(/,/g, ''));
+                }
+
                 renderizarMetas();
 
                 // 4. INYECTAR CONTROL FINANCIERO

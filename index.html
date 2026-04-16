@@ -152,7 +152,7 @@
 
     <script>
         // ¡URL ACTUALIZADA CON ÉXITO!
-        const URL_API_APPS_SCRIPT = "https://script.google.com/macros/s/AKfycby93oUObNgSCM8Hf4mkNpfTNmug0SueK2V-JWawq0IBfkalUBYrwuYASXIld3tv7gE/exec";
+        const URL_API_APPS_SCRIPT = "https://script.google.com/macros/s/AKfycbx6Kc3V_qAoCNLHE-MOJHBU1ysj1RQluxim9Ir8tIfMx0VZa5omRh83tzPhpPw-t7iO/exec";
         
         let metaSemanal = localStorage.getItem('metaSemanal') || 30000;
         let metaMensual = localStorage.getItem('metaMensual') || 200000;
@@ -160,17 +160,18 @@
         let utilidadMesActual = 0;
         let chartSemanal = null;
         let chartMensual = null;
-
+        
         function renderizarMetas() {
             document.getElementById('meta-sem-valor').innerText = Number(metaSemanal).toLocaleString();
             document.getElementById('meta-mes-valor').innerText = Number(metaMensual).toLocaleString();
-
+            
             let pctSemanal = Math.min(Math.round((utilidadSemanaActual / metaSemanal) * 100), 100);
             let pctMensual = Math.min(Math.round((utilidadMesActual / metaMensual) * 100), 100);
-
+            
             document.getElementById('meta-sem-porcentaje').innerText = pctSemanal + "%";
             document.getElementById('meta-sem-barra').style.width = pctSemanal + "%";
-            document.getElementById('meta-sem-restante').innerHTML = utilidadSemanaActual >= metaSemanal ? "🏆 META CUMPLIDA" : `Faltan $${(metaSemanal - utilidadSemanaActual).toLocaleString()}`;
+            document.getElementById('meta-sem-restante').innerHTML = utilidadSemanaActual >= metaSemanal ?
+            "🏆 META CUMPLIDA" : `Faltan $${(metaSemanal - utilidadSemanaActual).toLocaleString()}`;
 
             document.getElementById('meta-mes-porcentaje').innerText = pctMensual + "%";
             document.getElementById('meta-mes-barra').style.width = pctMensual + "%";
@@ -236,7 +237,7 @@
                 document.getElementById('m-gasto-dia').innerText = datos.control_financiero.gastoHoy || 0;
                 document.getElementById('m-gasto-sem').innerText = datos.control_financiero.gastoSemanal || 0;
                 document.getElementById('m-gasto-mes').innerText = datos.control_financiero.gastoMensual || 0;
-
+                
                 // Gráfica Semanal
                 if(datos.grafica_semanal) {
                     if(chartSemanal) chartSemanal.destroy();
